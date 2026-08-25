@@ -64,7 +64,7 @@ dataSet[dataSetVersion].options = [
 
 dataSet[dataSetVersion].characterData = [
 
-{ name: "John William Bludworth",
+{ name: "William John Bludworth",
   img: "0_Bludworth.png",
   opts: {
   movie: ["fd1", "fd2", "fd5", "fd6"],
