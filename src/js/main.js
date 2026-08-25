@@ -144,14 +144,11 @@ function start() {
 
   options.forEach(opt => {
     if ('sub' in opt) {
-      if (!document.getElementById(`cbgroup-${opt.key}`).checked) optTaken.push(false);
-      else {
-        const suboptArray = opt.sub.reduce((arr, val, idx) => {
-          arr.push(document.getElementById(`cb-${opt.key}-${idx}`).checked);
-          return arr;
-        }, []);
-        optTaken.push(suboptArray);
-      }
+      const suboptArray = opt.sub.reduce((arr, val, idx) => {
+        arr.push(document.getElementById(`cb-${opt.key}-${idx}`).checked);
+        return arr;
+      }, []);
+      optTaken.push(suboptArray);
     } else { optTaken.push(document.getElementById(`cb-${opt.key}`).checked); }
   });
 
@@ -178,18 +175,26 @@ function start() {
   /** Filter out deselected nested criteria and remove selected criteria. */
   options.forEach((opt, index) => {
     if ('sub' in opt) {
-      if (optTaken[index]) {
-        const subArray = optTaken[index].reduce((subList, subBool, subIndex) => {
-          if (subBool) { subList.push(options[index].sub[subIndex].key); }
-          return subList;
-        }, []);
-        characterDataToSort = characterDataToSort.filter(char => {
-          if (!(opt.key in char.opts)) console.warn(`Warning: ${opt.key} not set for ${char.name}.`);
-          return opt.key in char.opts && char.opts[opt.key].some(key => subArray.includes(key));
-        });
+      const subArray = optTaken[index].reduce((subList, subBool, subIndex) => {
+        if (subBool) { subList.push(options[index].sub[subIndex].key); }
+        return subList;
+      }, []);
+      characterDataToSort = characterDataToSort.filter(char => {
+        if (!(opt.key in char.opts)) console.warn(`Warning: ${opt.key} not set for ${char.name}.`);
+        return opt.key in char.opts && char.opts[opt.key].some(key => subArray.includes(key));
+      });
+    } else if (opt.key === 'premo' || opt.key === 'lives') {
+      /**
+       * These are "opt-in" tags nested inside a character's role array (rather than
+       * their own opts field), and are excluded by default: leaving the box unchecked
+       * hides characters tagged with it, checking the box includes them.
+       */
+      if (!optTaken[index]) {
+        characterDataToSort = characterDataToSort.filter(char => !(char.opts.role && char.opts.role.includes(opt.key)));
       }
     } else if (optTaken[index]) {
-      characterDataToSort = characterDataToSort.filter(char => !char.opts[opt.key]);
+      /** These are "restrict to only this" toggles (e.g. Male/Female Characters Only): keep only matching characters when checked. */
+      characterDataToSort = characterDataToSort.filter(char => char.opts[opt.key]);
     }
   });
 
@@ -663,18 +668,27 @@ function populateOptions() {
     if ('sub' in opt) {
       optList.insertAdjacentHTML('beforeend', optInsertLarge(opt.name, opt.key, opt.tooltip, opt.checked));
       opt.sub.forEach((subopt, subindex) => {
-        optList.insertAdjacentHTML('beforeend', optInsert(subopt.name, `${opt.key}-${subindex}`, subopt.tooltip, subopt.checked, opt.checked === false));
+        optList.insertAdjacentHTML('beforeend', optInsert(subopt.name, `${opt.key}-${subindex}`, subopt.tooltip, subopt.checked));
       });
       optList.insertAdjacentHTML('beforeend', '<hr>');
 
-      const groupbox = document.getElementById(`cbgroup-${opt.key}`);
+      const groupbox  = document.getElementById(`cbgroup-${opt.key}`);
+      const subboxes  = opt.sub.map((subopt, subindex) => document.getElementById(`cb-${opt.key}-${subindex}`));
 
-      groupbox.parentElement.addEventListener('click', () => {
-        opt.sub.forEach((subopt, subindex) => {
-          document.getElementById(`cb-${opt.key}-${subindex}`).disabled = !groupbox.checked;
-          if (groupbox.checked) { document.getElementById(`cb-${opt.key}-${subindex}`).checked = true; }
+      /** "Select All" checkbox: acts as a master toggle that checks/unchecks every item beneath it. */
+      groupbox.addEventListener('change', () => {
+        subboxes.forEach(cb => { cb.checked = groupbox.checked; });
+      });
+
+      /** Keep "Select All" in sync with its items: checked only when every item beneath it is checked. */
+      subboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          groupbox.checked = subboxes.every(box => box.checked);
         });
       });
+
+      /** Make sure "Select All" reflects the actual initial state of its items. */
+      groupbox.checked = subboxes.every(box => box.checked);
     } else {
       optList.insertAdjacentHTML('beforeend', optInsert(opt.name, opt.key, opt.tooltip, opt.checked));
     }
@@ -739,14 +753,13 @@ function decodeQuery(queryString = window.location.search.slice(1)) {
     let suboptDecodedIndex = 0;
     options.forEach((opt, index) => {
       if ('sub' in opt) {
-        const optIsTrue = optDecoded[index] === '1';
-        document.getElementById(`cbgroup-${opt.key}`).checked = optIsTrue;
         opt.sub.forEach((subopt, subindex) => {
-          const subIsTrue = optIsTrue ? suboptDecoded[suboptDecodedIndex][subindex] === '1' : true;
+          const subIsTrue = suboptDecoded[suboptDecodedIndex][subindex] === '1';
           document.getElementById(`cb-${opt.key}-${subindex}`).checked = subIsTrue;
-          document.getElementById(`cb-${opt.key}-${subindex}`).disabled = optIsTrue;
         });
-        suboptDecodedIndex = suboptDecodedIndex + optIsTrue ? 1 : 0;
+        /** "Select All" reflects whether every item beneath it was checked. */
+        document.getElementById(`cbgroup-${opt.key}`).checked = opt.sub.every((subopt, subindex) => document.getElementById(`cb-${opt.key}-${subindex}`).checked);
+        suboptDecodedIndex++;
       } else { document.getElementById(`cb-${opt.key}`).checked = optDecoded[index] === '1'; }
     });
 
