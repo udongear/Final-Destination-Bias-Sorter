@@ -321,7 +321,7 @@ dataSet[dataSetVersion].characterData = [
   opts: {
   movie: ["fd3"],
   role: ["all"],
-  male: true }
+  female: true }
 },
 { name: "Wendy Christensen",
   img: "3_Wendy.png",
