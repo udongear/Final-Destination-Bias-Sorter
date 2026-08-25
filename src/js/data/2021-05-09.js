@@ -208,7 +208,7 @@ dataSet[dataSetVersion].characterData = [
   img: "2_Kimberly.png",
   opts: {
   movie: ["fd2"],
-  role: ["all", "prot", "lives"],
+  role: ["all", "prot"],
   female: true }
 },
 { name: "Nora Carpenter",
