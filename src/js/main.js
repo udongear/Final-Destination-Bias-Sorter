@@ -297,6 +297,9 @@ function display() {
   document.querySelector('.left.sort.image').src = leftChar.img;
   document.querySelector('.right.sort.image').src = rightChar.img;
 
+  document.querySelector('.left.bg.image').src = leftChar.img;
+  document.querySelector('.right.bg.image').src = rightChar.img;
+
   
 
   document.querySelector('.left.sort.text').innerHTML = charNameDisp(leftChar.name);
@@ -480,6 +483,9 @@ function result(imageNum = 3) {
   
   document.querySelectorAll('.sorting.button').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.sort.text').forEach(el => el.style.display = 'none');
+
+  document.querySelector('.left.bg.image').src = 'src/assets/defaultL.png';
+  document.querySelector('.right.bg.image').src = 'src/assets/defaultR.png';
   document.querySelector('.options').style.display = 'none';
   document.querySelector('.info').style.display = 'none';
 
